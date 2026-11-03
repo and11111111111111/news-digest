@@ -24,7 +24,7 @@ rss:
   - {name: Вёрстка, url: "https://verstka.media/feed", section: rus}
   - {name: ОВД-Инфо, url: "https://ovd.info/rss.xml", section: rus}
   - {name: Медиазона, url: "https://zona.media/rss", section: rus}
-  - {name: Важные истории, url: "https://istories.media/rss/", section: rus}
+  - {name: Важные истории, urls: ["https://istories.media/rss/", "https://istories.media/feed/"], section: rus}  # сайт может не пускать серверы GitHub — дублируется Telegram-каналом ниже
   - {name: The Bell, url: "https://thebell.io/feed", section: econ}
   - {name: BBC Русская служба, url: "https://feeds.bbci.co.uk/russian/rss.xml", section: rus}
 
@@ -59,8 +59,8 @@ rss:
   - {name: Phys.org, url: "https://phys.org/rss-feed/", section: science}
 
   # --- Здоровье ---
-  - {name: Медвестник, url: "https://medvestnik.ru/rss", section: health}
-  - {name: Vademecum, url: "https://vademec.ru/rss/", section: health}
+  - {name: Медвестник, urls: ["https://medvestnik.ru/rss.xml", "https://medvestnik.ru/feed", "https://medvestnik.ru/content/rss"], section: health}
+  # Vademecum (vademec.ru) не отвечает серверам GitHub — заменён Telegram-каналом ниже
 
 # Telegram-каналы (читаются через веб-версию t.me/s/<канал>)
 telegram:
@@ -69,6 +69,8 @@ telegram:
   - {name: The Bell (Telegram), channel: thebell_io, section: econ}
   - {name: Meduza (Telegram), channel: meduzalive, section: rus}
   - {name: Интерфакс (Telegram), channel: interfaxonline, section: rus}
+  - {name: Важные истории (Telegram), channel: istories_media, section: rus}
+  - {name: Vademecum (Telegram), channel: vademecum_live, section: health}
 
 # Погода
 weather:

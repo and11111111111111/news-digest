@@ -51,36 +51,68 @@ def get(url: str, **kw) -> requests.Response:
 
 
 # ---------------------------------------------------------------- RSS
+_BAD_AMP = re.compile(rb"&(?!#?[A-Za-z0-9]+;)")
+_CTRL = re.compile(rb"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def parse_feed(content: bytes):
+    """Разбирает ленту; если XML битый (голые &, управляющие символы) — чинит и пробует снова."""
+    feed = feedparser.parse(content)
+    if feed.entries:
+        return feed
+    fixed = _BAD_AMP.sub(b"&amp;", _CTRL.sub(b"", content))
+    feed2 = feedparser.parse(fixed)
+    if feed2.entries:
+        return feed2
+    # Последний шанс: вытащить <item>/<entry> «вручную»
+    soup = BeautifulSoup(fixed, "html.parser")
+    entries = []
+    for node in soup.find_all(["item", "entry"]):
+        title = node.find("title")
+        link = node.find("link")
+        href = (link.get("href") or link.get_text(strip=True)) if link else ""
+        date = node.find(["pubdate", "published", "updated", "dc:date"])
+        desc = node.find(["description", "summary", "content"])
+        t = feedparser._parse_date(date.get_text(strip=True)) if date else None
+        entries.append({"title": title.get_text(" ", strip=True) if title else "",
+                        "link": href, "published_parsed": t,
+                        "summary": desc.get_text(" ", strip=True) if desc else ""})
+    if not entries:
+        raise ValueError(f"не RSS: {feed.get('bozo_exception')}")
+    return feedparser.FeedParserDict(entries=entries)
+
+
 def fetch_rss(src: dict, since: datetime) -> tuple[list[dict], dict]:
-    status = {"source": src["name"], "kind": "rss", "url": src["url"]}
-    try:
-        resp = get(src["url"])
-        feed = feedparser.parse(resp.content)
-        if feed.bozo and not feed.entries:
-            raise ValueError(f"не RSS: {feed.bozo_exception}")
-        items = []
-        for e in feed.entries:
-            t = e.get("published_parsed") or e.get("updated_parsed")
-            pub = (datetime.fromtimestamp(calendar.timegm(t), tz=timezone.utc)
-                   if t else None)
-            if pub and pub < since:
-                continue
-            title = clean_text(e.get("title"), 300)
-            if not title:
-                continue
-            items.append({
-                "source": src["name"],
-                "section_hint": src.get("section", ""),
-                "title": title,
-                "link": e.get("link", ""),
-                "published": pub.astimezone(MSK).isoformat() if pub else None,
-                "summary": clean_text(e.get("summary") or e.get("description")),
-            })
-        status.update(ok=True, total_in_feed=len(feed.entries), fresh=len(items))
-        return items, status
-    except Exception as ex:  # noqa: BLE001 — одна плохая лента не должна ронять сбор
-        status.update(ok=False, error=f"{type(ex).__name__}: {ex}"[:300])
-        return [], status
+    urls = src.get("urls") or [src["url"]]
+    status = {"source": src["name"], "kind": "rss", "url": urls[0]}
+    errors = []
+    for url in urls:  # можно указать несколько адресов — берётся первый рабочий
+        try:
+            feed = parse_feed(get(url).content)
+            items = []
+            for e in feed.entries:
+                t = e.get("published_parsed") or e.get("updated_parsed")
+                pub = (datetime.fromtimestamp(calendar.timegm(t), tz=timezone.utc)
+                       if t else None)
+                if pub and pub < since:
+                    continue
+                title = clean_text(e.get("title"), 300)
+                if not title:
+                    continue
+                items.append({
+                    "source": src["name"],
+                    "section_hint": src.get("section", ""),
+                    "title": title,
+                    "link": e.get("link", ""),
+                    "published": pub.astimezone(MSK).isoformat() if pub else None,
+                    "summary": clean_text(e.get("summary") or e.get("description")),
+                })
+            status.update(ok=True, url=url, total_in_feed=len(feed.entries), fresh=len(items))
+            return items, status
+        except Exception as ex:  # noqa: BLE001 — одна плохая лента не должна ронять сбор
+            errors.append(f"{url}: {type(ex).__name__}: {ex}"[:250])
+    status.update(ok=False, error=" | ".join(errors)[:600])
+    return [], status
 
 
 # ---------------------------------------------------------------- Telegram
@@ -132,7 +164,7 @@ def markets() -> tuple[dict, list[dict]]:
     def cbr_rates():
         # Официальные курсы ЦБ (зеркало cbr-xml-daily.ru даёт и предыдущее значение)
         j = get("https://www.cbr-xml-daily.ru/daily_json.js").json()
-        res = {"date": j.get("Date"), "source": "https://www.cbr.ru/currency_base/daily/"}
+        res = {"date": j.get("Date"), "note": "курс ЦБ, установленный на эту дату", "source": "https://www.cbr.ru/currency_base/daily/"}
         for code in ("USD", "EUR", "CNY"):
             v = j["Valute"][code]
             res[code] = {"value": round(v["Value"] / v["Nominal"], 4),
@@ -160,14 +192,14 @@ def markets() -> tuple[dict, list[dict]]:
                 "source": "https://www.moex.com/ru/index/IMOEX"}
 
     def brent():
-        # Котировка фьючерса Brent со stooq (CSV); при сбое — н/д
-        txt = get("https://stooq.com/q/l/", params={"s": "cb.f", "f": "sd2t2ohlc",
-                                                     "h": "", "e": "csv"}).text
-        lines = [l for l in txt.strip().splitlines() if l]
-        hdr, row = lines[0].split(","), lines[1].split(",")
-        d = dict(zip(hdr, row))
-        return {"date": d.get("Date"), "open": float(d["Open"]), "close": float(d["Close"]),
-                "source": "https://stooq.com/q/?s=cb.f"}
+        # Фьючерс Brent (BZ=F) из открытого API Yahoo Finance
+        j = get("https://query1.finance.yahoo.com/v8/finance/chart/BZ=F",
+                params={"range": "5d", "interval": "1d"}).json()
+        meta = j["chart"]["result"][0]["meta"]
+        return {"value": meta["regularMarketPrice"],
+                "previous": meta.get("chartPreviousClose") or meta.get("previousClose"),
+                "currency": meta.get("currency", "USD"),
+                "source": "https://finance.yahoo.com/quote/BZ=F"}
 
     def bitcoin():
         j = get("https://api.coingecko.com/api/v3/simple/price",
