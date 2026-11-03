@@ -1,0 +1,77 @@
+# Источники для сборщика новостей.
+# section — подсказка, в какой раздел дайджеста обычно попадают материалы ленты
+# (окончательно раздел выбирает модель): rus, war, world, press, econ, labor,
+# realty, it, ai, science, health.
+# Чтобы отключить ленту, поставьте перед строкой «- name» решётку (#) или удалите блок.
+# Если лента в отчёте status.json помечена как ошибка — проверьте адрес на сайте издания.
+
+rss:
+  # --- Российские СМИ ---
+  - {name: ТАСС, url: "https://tass.ru/rss/v2.xml", section: rus}
+  - {name: РИА Новости, url: "https://ria.ru/export/rss2/archive/index.xml", section: rus}
+  - {name: Интерфакс, url: "https://www.interfax.ru/rss.asp", section: rus}
+  - {name: РБК, url: "https://rssexport.rbc.ru/rbcnews/news/30/full.rss", section: rus}
+  - {name: Коммерсантъ, url: "https://www.kommersant.ru/RSS/news.xml", section: rus}
+  - {name: Ведомости, url: "https://www.vedomosti.ru/rss/news", section: econ}
+  - {name: Forbes Russia, url: "https://www.forbes.ru/newrss.xml", section: econ}
+
+  # --- Независимые издания ---
+  - {name: Meduza, url: "https://meduza.io/rss/all", section: rus}
+  - {name: Новая газета Европа, url: "https://novayagazeta.eu/feed/rss", section: rus}
+  - {name: Дождь, url: "https://tvrain.tv/export/rss/all.xml", section: rus}
+  - {name: The Insider, url: "https://theins.ru/feed", section: rus}
+  - {name: Re:Russia, url: "https://re-russia.net/feed/", section: econ}
+  - {name: Вёрстка, url: "https://verstka.media/feed", section: rus}
+  - {name: ОВД-Инфо, url: "https://ovd.info/rss.xml", section: rus}
+  - {name: Медиазона, url: "https://zona.media/rss", section: rus}
+  - {name: Важные истории, url: "https://istories.media/rss/", section: rus}
+  - {name: The Bell, url: "https://thebell.io/feed", section: econ}
+  - {name: BBC Русская служба, url: "https://feeds.bbci.co.uk/russian/rss.xml", section: rus}
+
+  # --- Война ---
+  - {name: Укринформ, url: "https://www.ukrinform.ru/rss/block-lastnews", section: war}
+  - {name: Kyiv Independent, url: "https://kyivindependent.com/news-archive/rss/", section: war}
+
+  # --- Мир и иностранная пресса (10 изданий обзора) ---
+  - {name: The New York Times, url: "https://rss.nytimes.com/services/xml/rss/nyt/World.xml", section: press}
+  - {name: Financial Times, url: "https://www.ft.com/world?format=rss", section: press}
+  - {name: The Guardian, url: "https://www.theguardian.com/world/rss", section: press}
+  - {name: Deutsche Welle, url: "https://rss.dw.com/xml/rss-ru-all", section: press}
+  - {name: Al Jazeera, url: "https://www.aljazeera.com/xml/rss/all.xml", section: press}
+  - {name: South China Morning Post, url: "https://www.scmp.com/rss/91/feed", section: press}
+  - {name: El País América, url: "https://feeds.elpais.com/mrss-s/pages/ep/site/elpais.com/section/america/portada", section: press}
+  - {name: Daily Maverick, url: "https://www.dailymaverick.co.za/dmrss/", section: press}
+  - {name: Foreign Affairs, url: "https://www.foreignaffairs.com/rss.xml", section: press}
+
+  # --- Экономика, труд, недвижимость ---
+  - {name: Frank Media, url: "https://frankmedia.ru/feed", section: econ}
+
+  # --- ИТ, ИИ, наука ---
+  - {name: CNews, url: "https://www.cnews.ru/inc/rss/news.xml", section: it}
+  - {name: ComNews, url: "https://www.comnews.ru/rss", section: it}
+  - {name: Хабр, url: "https://habr.com/ru/rss/news/", section: it}
+  - {name: The Verge, url: "https://www.theverge.com/rss/index.xml", section: ai}
+  - {name: TechCrunch, url: "https://techcrunch.com/feed/", section: ai}
+  - {name: Ars Technica, url: "https://feeds.arstechnica.com/arstechnica/index", section: it}
+  - {name: MIT Technology Review, url: "https://www.technologyreview.com/feed/", section: ai}
+  - {name: N+1, url: "https://nplus1.ru/rss", section: science}
+  - {name: Naked Science, url: "https://naked-science.ru/feed", section: science}
+  - {name: Phys.org, url: "https://phys.org/rss-feed/", section: science}
+
+  # --- Здоровье ---
+  - {name: Медвестник, url: "https://medvestnik.ru/rss", section: health}
+  - {name: Vademecum, url: "https://vademec.ru/rss/", section: health}
+
+# Telegram-каналы (читаются через веб-версию t.me/s/<канал>)
+telegram:
+  - {name: Можем объяснить, channel: mozhemobyasnit, section: rus}
+  - {name: РБК (Telegram), channel: rbc_news, section: rus}
+  - {name: The Bell (Telegram), channel: thebell_io, section: econ}
+  - {name: Meduza (Telegram), channel: meduzalive, section: rus}
+  - {name: Интерфакс (Telegram), channel: interfaxonline, section: rus}
+
+# Погода
+weather:
+  name: Одинцово
+  lat: 55.678
+  lon: 37.278
